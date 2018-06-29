@@ -49,21 +49,44 @@ No* no_criar(int linha, int coluna, int valor) {
 }
 
 No* getAddressLinha (No* sentinela, int pos){
+    
+    No* aux = sentinela;
 
+    while(aux->direita != sentinela && pos > aux->direita->coluna){
+        aux = aux->direita;
+    }
+
+    return aux;
 }
 
-int inserir_linha (No* sentinela, No* no) {
+No* getAddressColuna (No* sentinela, int pos){
+    
+    No* aux = sentinela;
 
-    No* aux = getAddressLinha(sentinela, no->coluna-1);
+    while(aux->baixo != sentinela && pos > aux->baixo->linha){
+        aux = aux->baixo;
+    }
+
+    return aux;
+}
+
+void inserir_linha (No* sentinela, No* no) {
+
+    No* aux = getAddressLinha (sentinela, no->coluna);
 
     no->direita = aux->direita;
     no->esquerda = aux;
-    aux->direita = no;
     aux->direita->esquerda = no;
+    aux->direita = no;
 }
 
-int inserir_coluna () {
+void inserir_coluna (No* sentinela, No* no) {
+    No* aux = getAddressColuna (sentinela, no->linha);
 
+    no->baixo = aux->baixo;
+    no->cima = aux;
+    aux->baixo->cima = no;
+    aux->baixo = no;
 }
 
 Matriz* matriz_criar (int qtdeLinhas, int qtdeColunas) {
@@ -75,22 +98,53 @@ Matriz* matriz_criar (int qtdeLinhas, int qtdeColunas) {
     matriz->numColunas = qtdeColunas;
 
     for (int i = 0 ; i < matriz->numColunas ; i++ ) {
-        matriz->colunas[i] = no_criar(0,0,0);
+        matriz->colunas[i] = no_criar(0,i,0);
     }
     for (int i = 0 ; i < matriz->numLinhas ; i ++) {
-        matriz->linhas[i] = no_criar(i,0,-10);
+        matriz->linhas[i] = no_criar(i,0,0);
     }
 
     return matriz;
 }
 
+int verifyValue ( Matriz* m, int linha, int coluna, int valor){
+    No* sentinela = m->linhas[linha];
+
+    No* aux = sentinela->direita;
+
+    while (aux != sentinela ){
+        if(coluna == aux->coluna){
+            aux->valor = valor;
+            return 1;
+        }
+        aux=aux->direita;
+    }
+    return 0;
+}
+
+void desalocar(Matriz* matriz) {
+    for (int i = 0 ; i<matriz->numLinhas ; i++) {
+        free(matriz->linhas[i]);
+    }
+
+    for (int i = 0 ; i<matriz->numColunas ; i++) {
+        free(matriz->colunas[i]);
+    }
+
+    free(matriz);
+}
+
 int matriz_inserir (Matriz* matriz, int linha, int coluna, int valor) {
+    if (linha < 0 || linha > matriz->numLinhas ) return 0;
+    if (coluna < 0 || coluna > matriz->numColunas ) return 0;
+    if( verifyValue(matriz,linha, coluna, valor) ) return 1;
+
     No* novo = no_criar(linha, coluna, valor);
 
-    if (novo->linha < 0 && novo->linha > matriz->numLinhas ) return 0;
+    inserir_linha(matriz->linhas[linha], novo);
+    inserir_coluna(matriz->colunas[coluna], novo);
 
-    int inserir_linha(Matriz* matriz, No* no, int linha, int coluna, int valor);
-    int inserir_coluna(Matriz* matriz, No* no, int linha, int coluna, int valor); 
+    return 1;
 }
 
 void matriz_imprimir (Matriz *matriz) {
@@ -101,12 +155,35 @@ void matriz_imprimir (Matriz *matriz) {
         aux = matriz->linhas[l]->direita;
         for (c = 0 ; c < matriz->numColunas ; c++) {
             if (aux != matriz->linhas[l] && c == aux->coluna) {
-                printf("%d", aux->valor);
+                printf("%5d ", aux->valor);
                 aux = aux->direita;
             } else {
-                printf("%d", 0);
+                printf("%5d ", 0);
             }
         }
         printf("\n ", 0);
     }
+}
+
+int matriz_acessar(Matriz* matriz, int linha, int coluna) {
+    if (linha < 0 || linha > matriz->numLinhas ) return 0;
+    if (coluna < 0 || coluna > matriz->numColunas ) return 0;
+
+    No* sentinela = matriz->linhas[linha];
+
+    No* aux = getAddressLinha(sentinela, coluna+1);
+
+    return aux->valor;
+
+}
+
+void imprimir_linha (Matriz* m, int linha) {
+    No* sentinela = m->linhas[linha];
+    No* aux = sentinela->direita;
+
+    while (aux != sentinela ){
+        printf("%d ", aux->valor);
+        aux = aux->direita;
+    }
+    printf("\n");
 }
